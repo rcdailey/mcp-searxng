@@ -282,7 +282,15 @@ async function main() {
     
     const transport = new StdioServerTransport();
     await server.connect(transport);
-    
+
+    // Handle graceful shutdown
+    const shutdown = async () => {
+      await server.close();
+      process.exit(0);
+    };
+    process.on('SIGINT', shutdown);
+    process.on('SIGTERM', shutdown);
+
     // Log after connection is established
     logMessage(server, "info", `MCP SearXNG Server v${packageVersion} connected via STDIO`);
     logMessage(server, "info", `Log level: ${currentLogLevel}`);
