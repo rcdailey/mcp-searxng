@@ -1,0 +1,70 @@
+name: Publish Docker Image to GHCR
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  packages: write
+  attestations: write
+  id-token: write
+
+jobs:
+  build-and-push:
+    name: Build and push Docker image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+        with:
+          version: 10
+
+      # pnpm/action-setup places the content-addressable store under a path
+      # containing "node_modules" (pnpm/action-setup#202). When pnpm fetches git
+      # dependencies and runs their prepack scripts, source files end up under
+      # that path. Node 22.18+ blocks type stripping for files under any
+      # node_modules path (ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING), which
+      # breaks the SDK fork's tsdown.config.ts. Relocating the store fixes this.
+      - name: Relocate pnpm store
+        run: pnpm config set store-dir /tmp/pnpm-store
+
+      - name: Set up Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: lts/*
+          cache: pnpm
+
+      - name: Install, build, and prune
+        run: pnpm install --frozen-lockfile && pnpm run build && pnpm prune --prod
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4.0.0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
+
+      - name: Log in to GHCR
+        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7.0.0
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          provenance: false
+          tags: |
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}

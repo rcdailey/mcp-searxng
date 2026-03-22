@@ -1,4 +1,4 @@
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { Server } from "@modelcontextprotocol/server";
 import { NodeHtmlMarkdown } from "node-html-markdown";
 import { createProxyAgent, ProxyType } from "./proxy.js";
 import { logMessage } from "./logging.js";

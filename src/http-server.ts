@@ -1,9 +1,8 @@
 import express from "express";
 import cors from "cors";
 import { randomUUID } from "crypto";
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
+import { Server, isInitializeRequest } from "@modelcontextprotocol/server";
+import { NodeStreamableHTTPServerTransport } from "@modelcontextprotocol/node";
 import { logMessage } from "./logging.js";
 import { packageVersion } from "./index.js";
 
@@ -19,12 +18,12 @@ export async function createHttpServer(server: Server): Promise<express.Applicat
   }));
 
   // Map to store transports by session ID  
-  const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {};
+  const transports: { [sessionId: string]: NodeStreamableHTTPServerTransport } = {};
 
   // Handle POST requests for client-to-server communication
   app.post('/mcp', async (req, res) => {
     const sessionId = req.headers['mcp-session-id'] as string | undefined;
-    let transport: StreamableHTTPServerTransport;
+    let transport: NodeStreamableHTTPServerTransport;
 
     if (sessionId && transports[sessionId]) {
       // Reuse existing transport
@@ -33,16 +32,13 @@ export async function createHttpServer(server: Server): Promise<express.Applicat
     } else if (!sessionId && isInitializeRequest(req.body)) {
       // New initialization request
       logMessage(server, "info", "Creating new HTTP session");
-      transport = new StreamableHTTPServerTransport({
+      transport = new NodeStreamableHTTPServerTransport({
         sessionIdGenerator: () => randomUUID(),
         onsessioninitialized: (sessionId) => {
           transports[sessionId] = transport;
           logMessage(server, "debug", `Session initialized: ${sessionId}`);
         },
-        // DNS rebinding protection disabled by default for backwards compatibility
-        // For production, consider enabling:
-        // enableDnsRebindingProtection: true,
-        // allowedHosts: ['127.0.0.1', 'localhost'],
+        keepAliveInterval: 30000,
       });
 
       // Clean up transport when closed

@@ -1,5 +1,5 @@
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { LoggingLevel } from "@modelcontextprotocol/sdk/types.js";
+import { Server } from "@modelcontextprotocol/server";
+import type { LoggingLevel } from "@modelcontextprotocol/server";
 
 // Logging state
 let currentLogLevel: LoggingLevel = "info";

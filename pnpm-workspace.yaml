@@ -1,0 +1,27 @@
+onlyBuiltDependencies:
+  - "@modelcontextprotocol/server"
+  - "@modelcontextprotocol/node"
+
+# The fork's packages use pnpm catalog: protocol for version specifiers, which
+# is only resolved during `pnpm publish`. Git-installed packages retain the raw
+# protocol. The .pnpmfile.cjs hook rewrites catalog: specifiers for resolution,
+# and packageExtensions ensures the transitive dependencies actually get installed.
+packageExtensions:
+  "@modelcontextprotocol/server":
+    dependencies:
+      zod: ^4.0
+    optionalDependencies:
+      "@cfworker/json-schema": ^4.1.1
+
+# Force zod to v4 globally. The server SDK requires ^4.0; mcp-evals (devDependency)
+# transitively wants ^3.23.8, but zod 4 includes a v3 compat layer. Without this
+# override, pnpm refuses to auto-install either version due to the conflict.
+overrides:
+  zod: ^4.0
+
+peerDependencyRules:
+  ignoreMissing:
+    - zod
+  allowAny:
+    - zod
+    - "@modelcontextprotocol/server"

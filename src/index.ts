@@ -1,16 +1,7 @@
 #!/usr/bin/env node
 
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-  SetLevelRequestSchema,
-  ListResourcesRequestSchema,
-  ListResourceTemplatesRequestSchema,
-  ReadResourceRequestSchema,
-  LoggingLevel,
-} from "@modelcontextprotocol/sdk/types.js";
+import { Server, StdioServerTransport } from "@modelcontextprotocol/server";
+import type { LoggingLevel } from "@modelcontextprotocol/server";
 
 // Import modularized functionality
 import { WEB_SEARCH_TOOL, READ_URL_TOOL, isSearXNGWebSearchArgs } from "./types.js";
@@ -84,22 +75,13 @@ const server = new Server(
     capabilities: {
       logging: {},
       resources: {},
-      tools: {
-        searxng_web_search: {
-          description: WEB_SEARCH_TOOL.description,
-          schema: WEB_SEARCH_TOOL.inputSchema,
-        },
-        web_url_read: {
-          description: READ_URL_TOOL.description,
-          schema: READ_URL_TOOL.inputSchema,
-        },
-      },
+      tools: {},
     },
   }
 );
 
 // List tools handler
-server.setRequestHandler(ListToolsRequestSchema, async () => {
+server.setRequestHandler("tools/list", async () => {
   logMessage(server, "debug", "Handling list_tools request");
   return {
     tools: [WEB_SEARCH_TOOL, READ_URL_TOOL],
@@ -107,7 +89,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 });
 
 // Call tool handler
-server.setRequestHandler(CallToolRequestSchema, async (request) => {
+server.setRequestHandler("tools/call", async (request) => {
   const { name, arguments: args } = request.params;
   logMessage(server, "debug", `Handling call_tool request: ${name}`);
 
@@ -171,7 +153,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 });
 
 // Logging level handler
-server.setRequestHandler(SetLevelRequestSchema, async (request) => {
+server.setRequestHandler("logging/setLevel", async (request) => {
   const { level } = request.params;
   logMessage(server, "info", `Setting log level to: ${level}`);
   currentLogLevel = level;
@@ -180,7 +162,7 @@ server.setRequestHandler(SetLevelRequestSchema, async (request) => {
 });
 
 // List resources handler
-server.setRequestHandler(ListResourcesRequestSchema, async () => {
+server.setRequestHandler("resources/list", async () => {
   logMessage(server, "debug", "Handling list_resources request");
   return {
     resources: [
@@ -201,13 +183,13 @@ server.setRequestHandler(ListResourcesRequestSchema, async () => {
 });
 
 // List resource templates handler
-server.setRequestHandler(ListResourceTemplatesRequestSchema, async () => {
+server.setRequestHandler("resources/templates/list", async () => {
   logMessage(server, "debug", "Handling list_resource_templates request");
   return { resourceTemplates: [] };
 });
 
 // Read resource handler
-server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+server.setRequestHandler("resources/read", async (request) => {
   const { uri } = request.params;
   logMessage(server, "debug", `Handling read_resource request for: ${uri}`);
 

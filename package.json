@@ -38,12 +38,13 @@
         "watch": "tsc --watch",
         "test": "cross-env SEARXNG_URL=https://test-searx.example.com tsx __tests__/run-all.ts",
         "test:coverage": "cross-env SEARXNG_URL=https://test-searx.example.com c8 --reporter=text tsx __tests__/run-all.ts",
-        "bootstrap": "npm install && npm run build",
+        "bootstrap": "pnpm install && pnpm run build",
         "inspector": "DANGEROUSLY_OMIT_AUTH=true npx @modelcontextprotocol/inspector node dist/index.js",
         "postversion": "TAG=$(node scripts/update-version.js | tail -1) && git add src/index.ts && git commit --amend --no-edit && git tag -f $TAG"
     },
     "dependencies": {
-        "@modelcontextprotocol/sdk": "1.17.4",
+        "@modelcontextprotocol/server": "github:rcdailey/typescript-sdk#main&path:packages/server",
+        "@modelcontextprotocol/node": "github:rcdailey/typescript-sdk#main&path:packages/middleware/node",
         "@types/cors": "^2.8.19",
         "@types/express": "^5.0.3",
         "cors": "^2.8.5",
